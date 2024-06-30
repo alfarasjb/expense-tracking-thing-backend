@@ -10,7 +10,6 @@ class AuthManager {
 
     constructor(client: RedisClientType) {
         this.client = client;
-        this.client.connect().catch(console.error);
     }
     
     private async userExists(username: string): Promise<boolean> {
@@ -36,12 +35,13 @@ class AuthManager {
     }
 
     async authenticateUser(userData: UserData): Promise<boolean> {
+        // Fix this
         const { username, password } = userData 
         const user = await this.client.hGetAll(this.userKey(username)); 
         if (!user) {
             return false; 
         }
-        const { salt, hashedPassword } = user; 
+        const { salt, password: hashedPassword } = user;  
         return userData.hashPassword(password, salt) === hashedPassword; 
     }
 }

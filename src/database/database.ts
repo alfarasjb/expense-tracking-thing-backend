@@ -14,6 +14,7 @@ class DatabaseManager {
         this.client = createClient ({ 
             url: `rediss://default:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
         }); 
+        
         this.authManager = new AuthManager(this.client);
         this.client.connect().catch(console.error);
     } 
