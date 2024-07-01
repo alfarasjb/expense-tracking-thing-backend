@@ -7,9 +7,11 @@ dotenv.config();
 
 class AuthManager {
     private client: RedisClientType;
+    public user: string;
 
     constructor(client: RedisClientType) {
         this.client = client;
+        this.user = ""
     }
 
     private userKey = (username: string): string => `user:${username}`; 
@@ -42,8 +44,13 @@ class AuthManager {
         if (!user) {
             return false; 
         }
-        const { salt, password: hashedPassword } = user;  // salt taken from db 
-        return this.generateHashedPassword(password, salt) === hashedPassword
+        const { salt, password: hashedPassword } = user;  // salt taken from db
+          
+        const authenticated =  this.generateHashedPassword(password, salt) === hashedPassword 
+        if (authenticated) {
+            this.user = username 
+        }
+        return authenticated
     }
 }
 

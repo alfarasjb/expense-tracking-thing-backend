@@ -51,8 +51,15 @@ class Server {
 
         this.app.get(ApiEndpoints.DB_HISTORY, (req: Request, res: Response) => {
             // Call this when getting history data 
-            console.log("Getting history data")
-            res.status(200).json({message: "Getting history data"})
+            const { username } = req.body
+            console.log("Getting history data") 
+            this.databaseManager.getAllExpenseData(username).then((expenseData) => {
+                if (expenseData.length > 0) {
+                    res.status(200).json({message: "Fetching history data.", data: expenseData}) 
+                } else {
+                    res.status(200).json({message: `No expense data found for user ${this.databaseManager.authManager.user}`})
+                }
+            })
         })
 
         this.app.post(ApiEndpoints.DB_CLEAR, (req: Request, res: Response) => {
@@ -65,25 +72,25 @@ class Server {
         this.app.post(ApiEndpoints.DB_AUTH_REGISTER, async (req: Request, res: Response) => {
             // Call this when registering a user 
             console.log("Registering user")   
-            const registerResponse = await this.databaseManager.registerUser(req.body) 
-            if (registerResponse) {
-                res.status(200).json({message: "User registered"}) 
-            }
-            else {
-                res.status(400).json({message: "Failed to register user. User already exists."})
-            }
+            this.databaseManager.registerUser(req.body).then((registered) => {
+                if (registered) {
+                    res.status(200).json({message: `User ${req.body.username} registered succesfully.`})
+                } else {
+                    res.status(400).json({message: `Failed to register user ${req.body.username}. User already exists.`})
+                }
+            })
         }) 
 
         this.app.post(ApiEndpoints.DB_AUTH_LOGIN, async (req: Request, res: Response) => {
             // Call this when logging in a user 
             console.log("Logging in") 
-            const loginResponse = await this.databaseManager.loginUser(req.body) 
-            if (loginResponse) { 
-                res.status(200).json({message: "Logged in successfully."}) 
-            }
-            else {
-                res.status(401).json({message: "Login failed. Username or password may be incorrect."})
-            }
+            this.databaseManager.loginUser(req.body).then((success) => {
+                if (success) {
+                    res.status(200).json({message: "Logged in successfully."}) 
+                } else {
+                    res.status(401).json({message: "Login failed. Username or password may be incorrect."})
+                }
+            })
         })
     }
     

@@ -1,14 +1,22 @@
 import crypto from "crypto"; 
 
+interface ExpenseJson {
+    [key: string]: any;
+}
+
 class ExpenseData {
     category: string;
     description: string;
     amount: number;
+    date: number 
+    user: string
 
-    constructor(category: string, description: string, amount: string) {
+    constructor(category: string, description: string, amount: string, username: string) {
         this.category = category;
         this.description = description;
         this.amount = this.parseAmount(amount);
+        this.date = Date.now() 
+        this.user = username
     }
 
     parseAmount(value: string | number): number {
@@ -24,12 +32,13 @@ class ExpenseData {
             throw new Error("Invalid type for amount");
         }
     }
-    
-    asJson() {
+    asJson(): ExpenseJson {
         return {
             category: this.category,
             description: this.description,
-            amount: this.amount
+            amount: this.amount,
+            date: this.date,
+            user: this.user
         };
     }
 }
@@ -39,4 +48,4 @@ interface UserData {
     password: string;
 }
 
-export { ExpenseData, UserData }
+export { ExpenseData, UserData, ExpenseJson }
