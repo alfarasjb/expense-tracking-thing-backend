@@ -11,23 +11,25 @@ class AuthManager {
     constructor(client: RedisClientType) {
         this.client = client;
     }
-    
+
+    private userKey = (username: string): string => `user:${username}`; 
+    private generateSalt = () => crypto.randomBytes(16).toString('hex'); 
+    private generateHashedPassword = (password: string, salt: string) => crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex')
+
     private async userExists(username: string): Promise<boolean> {
         const user = await this.client.hGetAll(`user:${username}`) 
         return Object.keys(user).length > 0; 
     } 
-    
-    private userKey(username: string): string {
-        return `user:${username}`
-    }
 
     async registerUser(userData: UserData): Promise<boolean> {
-        const { username, password, salt } = userData  
-        const value = { password, salt }  // This password is already hashed and salted in UserData  
+        let { username, password } = userData    
+        const salt = this.generateSalt()
+        password = this.generateHashedPassword(password, salt)
+        const value = { password, salt }  
         // First check if user exists  
         if (await this.userExists(username)) {  
             // Return if user already exists
-            console.log("User already exists")
+            console.log(`User ${username} already exists`)
             return false; 
         }
         await this.client.hSet(this.userKey(username), value) 
@@ -35,15 +37,17 @@ class AuthManager {
     }
 
     async authenticateUser(userData: UserData): Promise<boolean> {
-        // Fix this
         const { username, password } = userData 
         const user = await this.client.hGetAll(this.userKey(username)); 
         if (!user) {
             return false; 
         }
-        const { salt, password: hashedPassword } = user;  
-        return userData.hashPassword(password, salt) === hashedPassword; 
+        const { salt, password: hashedPassword } = user;  // salt taken from db 
+        return this.generateHashedPassword(password, salt) === hashedPassword
     }
 }
 
 export default AuthManager;
+
+
+

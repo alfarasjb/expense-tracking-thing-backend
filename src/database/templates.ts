@@ -34,20 +34,9 @@ class ExpenseData {
     }
 }
 
-class UserData {
-    username: string 
-    password: string  
-    salt: string
-
-    constructor(username: string, password: string) {
-        this.username = username 
-        this.salt = crypto.randomBytes(16).toString('hex')
-        this.password = this.hashPassword(password, this.salt) 
-    } 
-
-    hashPassword(password: string, salt: string) {
-        return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex')
-    }
+interface UserData {
+    username: string; 
+    password: string;
 }
 
 export { ExpenseData, UserData }

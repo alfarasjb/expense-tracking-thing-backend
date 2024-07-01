@@ -8,7 +8,7 @@ dotenv.config();
 
 class DatabaseManager {
     private client: RedisClientType; 
-    private authManager: AuthManager;
+    public authManager: AuthManager;
 
     constructor () {
         this.client = createClient ({ 
@@ -17,14 +17,20 @@ class DatabaseManager {
         
         this.authManager = new AuthManager(this.client);
         this.client.connect().catch(console.error);
-    } 
+    }
     async registerUser(userData: {username: string, password: string}) { 
-        const user = new UserData(userData.username, userData.password) 
+        const user: UserData = {
+            username: userData.username, 
+            password: userData.password
+        }
         return await this.authManager.registerUser(user)
     }
 
     async loginUser(userData: {username: string, password: string}) {
-        const user = new UserData(userData.username, userData.password)
+        const user: UserData = {
+            username: userData.username, 
+            password: userData.password
+        }
         return await this.authManager.authenticateUser(user)
     }
 
