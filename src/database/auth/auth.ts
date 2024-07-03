@@ -1,7 +1,9 @@
 import { createClient, RedisClientType } from "redis";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { UserData } from "../templates";
+import { UserData } from "../templates"; 
+import { logger } from '../../utils/logger';
+
 
 dotenv.config();
 
@@ -30,7 +32,7 @@ class AuthManager {
         const value = { password, salt }  
         // First check if user exists  
         if (await this.userExists(username)) {  
-            // Return if user already exists
+            // Return if user already exists 
             console.log(`User ${username} already exists`)
             return false; 
         }

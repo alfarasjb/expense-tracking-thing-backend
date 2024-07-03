@@ -2,6 +2,8 @@ import { createClient, RedisClientType } from "redis";
 import dotenv from "dotenv";  
 import { ExpenseData, UserData, ExpenseJson } from "./templates";
 import AuthManager from "./auth/auth";
+import { logger } from '../utils/logger';
+
 
 
 dotenv.config(); 
@@ -23,6 +25,8 @@ class DatabaseManager {
             username: userData.username, 
             password: userData.password
         }
+        const logger_message = `Registering User: ${user.username}` 
+        logger.info(logger_message)
         return await this.authManager.registerUser(user)
     }
 
@@ -37,7 +41,7 @@ class DatabaseManager {
     async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string }) { 
         this.authManager.user = expenseData.username 
         const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user)
-        const jsonData = data.asJson() 
+        const jsonData = data.asJson()  
         console.log(jsonData) 
         await this.client.hSet(`expense:${this.authManager.user}:${Date.now()}`, jsonData); 
     } 

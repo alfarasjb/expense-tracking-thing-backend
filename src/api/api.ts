@@ -3,20 +3,11 @@ import dotenv from "dotenv";
 import bodyParser from 'body-parser'; 
 import { ApiEndpoints } from '../definitions/constants'; 
 import DatabaseManager from '../database/database'; 
-import winston, { log } from 'winston';
+import { logger } from '../utils/logger';
 
 dotenv.config() 
 
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(), 
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.Console(),
-    ],
-})
+
 
 class Server {
     private app: express.Application; 
