@@ -14,7 +14,7 @@ class Server {
     constructor() {
         console.log("Starting server")
         this.app = express() 
-        this.port = process.env.PORT 
+        this.port = process.env.PORT || "3000"
         this.databaseManager = new DatabaseManager()
 
         this.app.use(bodyParser.json())
