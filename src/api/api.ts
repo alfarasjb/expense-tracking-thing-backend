@@ -50,12 +50,17 @@ class Server {
             logger.info(logger_message)  
             // Payload 
             // Get start and end date
-            const { startDate, endDate } = req.body 
+            const { start_date: startDate, end_date: endDate  } = req.body 
             const message = `Getting monthly data from ${startDate} to ${endDate}` 
             logger.info(message)
             // Get data from db here 
-            this.databaseManager.getExpenseDataFromDates(startDate, endDate)
-            res.status(200).json({message: "Getting data from database"})
+            this.databaseManager.getExpenseDataFromDates(startDate, endDate).then((expenseData) => { 
+                if (expenseData.length > 0) { 
+                    res.status(200).json({message: `Fetching history data from ${startDate} to ${endDate}.`, data: expenseData})
+                } else {
+                    res.status(200).json({message: `No expenses from ${startDate} to ${endDate}`})
+                }
+            })
         })
 
         this.app.get(ApiEndpoints.DB_HISTORY, (req: Request, res: Response) => {

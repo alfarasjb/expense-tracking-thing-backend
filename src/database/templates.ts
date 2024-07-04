@@ -8,17 +8,17 @@ class ExpenseData {
     category: string;
     description: string;
     amount: number;
-    date: number 
+    date: string
     user: string
 
-    constructor(category: string, description: string, amount: string, username: string) {
+    constructor(category: string, description: string, amount: string, username: string, date: string) {
         this.category = category;
         this.description = description;
         this.amount = this.parseAmount(amount);
-        this.date = Date.now() 
+        this.date = date
         this.user = username
     }
-
+    
     parseAmount(value: string | number): number {
         if (typeof value === 'string') {
             const parsedValue = parseFloat(value);

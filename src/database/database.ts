@@ -39,10 +39,10 @@ class DatabaseManager {
         return await this.authManager.authenticateUser(user)
     }
 
-    async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string }) {  
+    async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string, date: string}) {  
         logger.info('Storing expense data.')
         this.authManager.user = expenseData.username 
-        const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user)
+        const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user, expenseData.date)
         const jsonData = data.asJson()  
         console.log(jsonData) 
         await this.client.hSet(`expense:${this.authManager.user}:${Date.now()}`, jsonData); 
@@ -50,20 +50,20 @@ class DatabaseManager {
 
     async exportExpenseDataAsCsv() {}   
 
-    async getExpenseDataFromDates(startDate: string, endDate: string): Promise<ExpenseData[]> {
+    async getExpenseDataFromDates(startDate: string, endDate: string): Promise<ExpenseJson[]> {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const result: ExpenseData[] = [];
+        const result: ExpenseJson[] = []; 
         
         const keys = await this.client.keys(`expense:${this.authManager.user}:*`);  // Add key prefix here 
         for (const key of keys) {
-            const data = await this.client.hGetAll(key);
-            const date = new Date(data.date);
+            const data = await this.client.hGetAll(key); 
+            const date = new Date(Number(data.date)); 
             if (date >= start && date <= end) { 
                 // parse json data here 
-                const expenseData: ExpenseData = new ExpenseData(data.category, data.description, data.amount, this.authManager.user)
+                const expenseData: ExpenseData = new ExpenseData(data.category, data.description, data.amount, this.authManager.user, data.date)
                 console.log(expenseData.asJson())
-                result.push(expenseData);
+                result.push(expenseData.asJson());
             }
         }
         return result;
@@ -75,7 +75,7 @@ class DatabaseManager {
         const keys = await this.client.keys(`expense:${username}:*`)
         for (const key of keys) {
             const data = await this.client.hGetAll(key); 
-            const expenseData: ExpenseData = new ExpenseData(data.category, data.description, data.amount, username) 
+            const expenseData: ExpenseData = new ExpenseData(data.category, data.description, data.amount, username, data.date) 
             result.push(expenseData.asJson()) 
         }
         console.log(result)
