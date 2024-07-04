@@ -21,8 +21,9 @@ class AuthManager {
     private generateHashedPassword = (password: string, salt: string) => crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex')
 
     private async userExists(username: string): Promise<boolean> {
-        const user = await this.client.hGetAll(`user:${username}`) 
-        return Object.keys(user).length > 0; 
+        const user = await this.client.hGetAll(`user:${username}`)  
+        const exists: boolean = Object.keys(user).length > 0;
+        return exists 
     } 
 
     async registerUser(userData: UserData): Promise<boolean> {
@@ -33,7 +34,7 @@ class AuthManager {
         // First check if user exists  
         if (await this.userExists(username)) {  
             // Return if user already exists 
-            console.log(`User ${username} already exists`)
+            logger.error(`Failed to register user. User ${username} already exists.`) 
             return false; 
         }
         await this.client.hSet(this.userKey(username), value) 
@@ -43,13 +44,15 @@ class AuthManager {
     async authenticateUser(userData: UserData): Promise<boolean> {
         const { username, password } = userData 
         const user = await this.client.hGetAll(this.userKey(username)); 
-        if (!user) {
+        if (!user) { 
+            logger.error(`Failed to authenticate user. User ${username} not found.`)
             return false; 
         }
         const { salt, password: hashedPassword } = user;  // salt taken from db
           
         const authenticated =  this.generateHashedPassword(password, salt) === hashedPassword 
         if (authenticated) {
+            logger.info(`User ${username} authenticated successfully.`)
             this.user = username 
         }
         return authenticated

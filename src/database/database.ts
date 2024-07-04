@@ -30,15 +30,17 @@ class DatabaseManager {
         return await this.authManager.registerUser(user)
     }
 
-    async loginUser(userData: {username: string, password: string}) {
+    async loginUser(userData: {username: string, password: string}) { 
         const user: UserData = {
             username: userData.username, 
             password: userData.password
-        }
+        } 
+        logger.info(`Authenticating user: ${user.username}`)
         return await this.authManager.authenticateUser(user)
     }
 
-    async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string }) { 
+    async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string }) {  
+        logger.info('Storing expense data.')
         this.authManager.user = expenseData.username 
         const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user)
         const jsonData = data.asJson()  
