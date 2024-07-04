@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 import bodyParser from 'body-parser'; 
 import { ApiEndpoints } from '../definitions/constants'; 
 import DatabaseManager from '../database/database'; 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger'; 
+import ChatBot from '../chat/chat';
 
 dotenv.config() 
 
@@ -12,13 +13,15 @@ dotenv.config()
 class Server {
     private app: express.Application; 
     private port: string | undefined
-    private databaseManager: DatabaseManager
+    private databaseManager: DatabaseManager 
+    private chatbot: ChatBot
 
     constructor() {
         console.log("Starting server")
         this.app = express() 
         this.port = process.env.PORT || "3000"
-        this.databaseManager = new DatabaseManager()
+        this.databaseManager = new DatabaseManager() 
+        this.chatbot = new ChatBot()
 
         this.app.use(bodyParser.json())
         this.setupRoutes()
@@ -99,6 +102,23 @@ class Server {
                     res.status(200).json({message: "Logged in successfully."}) 
                 } else {
                     res.status(401).json({message: "Login failed. Username or password may be incorrect."})
+                }
+            })
+        })
+
+        this.app.post(ApiEndpoints.CHATBOT_MESSAGE, async (req: Request, res: Response) => {
+            // Call this when a user wants to chat with chatbot 
+            // TODO: Fix this 
+            const { message } = req.body
+            logger.info(`Sending message to chatbot: ${message}`)  
+            //res.status(200).json({message: message})
+        
+            this.chatbot.sendMessageToChatBot(message).then((chatbotResponse) => {
+                if (chatbotResponse !== null) { 
+                    res.status(200).json({message: chatbotResponse}) 
+                } else { 
+                    logger.error("No response from chatbot")
+                    res.status(404)
                 }
             })
         })

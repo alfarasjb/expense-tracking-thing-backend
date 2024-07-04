@@ -1,13 +1,18 @@
 import { OpenAI } from "openai";  
-import { SUMMARY_PROMPT_TEMPLATE } from "./prompts/system_templates";
+import { SUMMARY_PROMPT_TEMPLATE, USER_CHAT_SYSTEM_PROMPT_TEMPLATE } from "./prompts/system_templates";
 import { USER_PROMPT_TEMPLATE } from "./prompts/user_templates";
 import { ChatModels } from "../definitions/constants";
+import dotenv from "dotenv"; 
+
+
+dotenv.config()
+
 
 class ChatBot {
     private openai: OpenAI  
 
     constructor() {
-        this.openai = new OpenAI()
+        this.openai = new OpenAI() 
     } 
     
     async generateSummaryWithChatModel(): Promise<string | null> {  
@@ -17,6 +22,14 @@ class ChatBot {
         )
         return this.chat(messages)
     } 
+
+    async sendMessageToChatBot(userMessage: string): Promise<string | null> {
+        const messages: OpenAI.Chat.ChatCompletionMessageParam[] = this.createMessage(
+            USER_CHAT_SYSTEM_PROMPT_TEMPLATE, 
+            userMessage
+        )
+        return this.chat(messages)
+    }
 
     private createMessage(systemPrompt: string, userPrompt: string): OpenAI.Chat.ChatCompletionMessageParam[] {
         return [
