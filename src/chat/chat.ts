@@ -8,7 +8,8 @@ import { ExpenseJson } from "../database/templates";
 
 dotenv.config()
 
-
+// TODO: Improve prompts 
+// TODO: Add history 
 class ChatBot {
     private openai: OpenAI  
 
