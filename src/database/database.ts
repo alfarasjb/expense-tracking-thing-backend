@@ -60,7 +60,7 @@ class DatabaseManager {
     async storeExpenseData(expenseData: { username: string, category: string, description: string, amount: string, date: string}) {  
         logger.info('Storing expense data.')
         this.authManager.user = expenseData.username 
-        const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user, this.formatDate(new Date(expenseData.date)))
+        const data: ExpenseData = new ExpenseData(expenseData.category, expenseData.description, expenseData.amount, this.authManager.user, expenseData.date)
         const jsonData = data.asJson()  
         // console.log(jsonData) 
         await this.client.hSet(`expense:${this.authManager.user}:${Date.now()}`, jsonData); 
@@ -77,11 +77,12 @@ class DatabaseManager {
         const keys = await this.client.keys(`expense:${this.authManager.user}:*`);  // Add key prefix here 
         for (const key of keys) {
             const data = await this.client.hGetAll(key); 
-            const date = new Date(Number(data.date));  
+            
+            let date = new Date(Number(data.date));  
+            date = new Date(date.getTime() - 8 * 60 * 60 * 1000)
             if (date >= start && date <= end) { 
                 // parse json data here  
                 const expenseData: ExpenseData = new ExpenseData(data.category, data.description, data.amount, this.authManager.user, this.formatDate(date))
-                //console.log(expenseData.asJson())
                 result.push(expenseData.asJson());
             }
         } 
