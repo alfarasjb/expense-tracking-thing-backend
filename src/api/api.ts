@@ -5,6 +5,8 @@ import { ApiEndpoints } from '../definitions/constants';
 import DatabaseManager from '../database/database'; 
 import { logger } from '../utils/logger'; 
 import ChatBot from '../chat/chat';
+import { ExpenseJson } from '../database/templates';
+import { getStartAndEndDatesForCurrentMonth } from "../utils/utils";
 
 dotenv.config() 
 
@@ -24,7 +26,7 @@ class Server {
         this.chatbot = new ChatBot()
 
         this.app.use(bodyParser.json())
-        this.setupRoutes()
+        this.setupRoutes()  
     } 
 
 
@@ -54,9 +56,11 @@ class Server {
             const message = `Getting monthly data from ${startDate} to ${endDate}` 
             logger.info(message)
             // Get data from db here 
-            this.databaseManager.getExpenseDataFromDates(startDate, endDate).then((expenseData) => { 
-                if (expenseData.length > 0) { 
-                    res.status(200).json({message: `Fetching history data from ${startDate} to ${endDate}.`, data: expenseData})
+            this.databaseManager.getExpenseDataFromDates(startDate, endDate).then((expenseData: ExpenseJson[]) => { 
+                if (expenseData.length > 0) {  
+                    this.chatbot.generateSummaryWithChatModel(expenseData).then((summary) => {
+                        res.status(200).json({message: `Fetching history data from ${startDate} to ${endDate}.`, data: expenseData, summary: summary})
+                    })
                 } else {
                     res.status(200).json({message: `No expenses from ${startDate} to ${endDate}`})
                 }
@@ -111,24 +115,37 @@ class Server {
             })
         })
 
-        this.app.post(ApiEndpoints.CHATBOT_MESSAGE, async (req: Request, res: Response) => {
+        this.app.post(ApiEndpoints.CHATBOT_MESSAGE, async (req: Request, res: Response) => { 
             // Call this when a user wants to chat with chatbot 
             // TODO: Fix this 
-            const { message } = req.body
+            const { user, message } = req.body  
+            if (this.databaseManager.authManager.user == "") {
+                this.databaseManager.authManager.user = user  // Set the user if none
+            }
             logger.info(`Sending message to chatbot: ${message}`)  
-            //res.status(200).json({message: message})
-        
-            this.chatbot.sendMessageToChatBot(message).then((chatbotResponse) => {
-                if (chatbotResponse !== null) { 
-                    res.status(200).json({message: chatbotResponse}) 
-                } else { 
-                    logger.error("No response from chatbot")
-                    res.status(404)
-                }
-            })
+            //res.status(200).json({message: message})  
+            const monthlyData = this.databaseManager.monthlyData as ExpenseJson[] 
+            if (monthlyData.length == 0) {
+                this.databaseManager.initializeMonthlyData().then((monthlyData) => {
+                    this.sendChatBotMessage(message, monthlyData, res)
+                })
+            } else {
+                this.sendChatBotMessage(message, monthlyData, res) 
+            }
         })
     }
     
+    private sendChatBotMessage(message: string, monthlyData: ExpenseJson[], res: Response): any {
+        this.chatbot.sendMessageToChatBot(message, monthlyData).then((chatbotResponse) => {
+            if (chatbotResponse !== null) {
+                res.status(200).json({message: chatbotResponse})
+            } else {
+                logger.error("no response from chatbot")
+                res.status(404)
+            }
+        })
+    }
+
     public start() {
         this.app.listen(Number(this.port), '0.0.0.0', 511, () => { 
             logger.info(`Server is running on port ${this.port}`); 
