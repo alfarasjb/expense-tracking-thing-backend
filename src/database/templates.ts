@@ -43,7 +43,8 @@ class ExpenseData {
     }
 }
 
-interface UserData {
+interface UserData { 
+    name: string;
     username: string; 
     password: string;
 }

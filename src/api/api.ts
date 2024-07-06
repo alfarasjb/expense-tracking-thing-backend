@@ -11,7 +11,6 @@ import { getStartAndEndDatesForCurrentMonth } from "../utils/utils";
 dotenv.config() 
 
 
-
 class Server {
     private app: express.Application; 
     private port: string | undefined
@@ -95,7 +94,7 @@ class Server {
             logger.info(logger_message)   
             this.databaseManager.registerUser(req.body).then((registered) => {
                 if (registered) {
-                    res.status(200).json({message: `User ${req.body.username} registered succesfully.`})
+                    res.status(200).json({message: `User ${req.body.username} registered succesfully.`, name: this.databaseManager.authManager.name})
                 } else {
                     res.status(400).json({message: `Failed to register user ${req.body.username}. User already exists.`})
                 }
@@ -108,7 +107,7 @@ class Server {
             logger.info(logger_message)
             this.databaseManager.loginUser(req.body).then((success) => {
                 if (success) {
-                    res.status(200).json({message: "Logged in successfully."}) 
+                    res.status(200).json({message: "Logged in successfully.", name: this.databaseManager.authManager.name}) 
                 } else {
                     res.status(401).json({message: "Login failed. Username or password may be incorrect."})
                 }

@@ -10,6 +10,8 @@ dotenv.config()
 
 // TODO: Improve prompts 
 // TODO: Add history 
+// TODO: Store summary info in db so we don't have to generate a new summary when there's no new info
+// Basically, only generate a summmary if there's new data. 
 class ChatBot {
     private openai: OpenAI  
 

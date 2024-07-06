@@ -38,8 +38,9 @@ class DatabaseManager {
         return this.monthlyData
     }
 
-    async registerUser(userData: {username: string, password: string}) { 
-        const user: UserData = {
+    async registerUser(userData: { name: string, username: string, password: string}) { 
+        const user: UserData = { 
+            name: userData.name,
             username: userData.username, 
             password: userData.password
         }
@@ -48,8 +49,9 @@ class DatabaseManager {
         return await this.authManager.registerUser(user)
     }
 
-    async loginUser(userData: {username: string, password: string}) { 
-        const user: UserData = {
+    async loginUser(userData: {name: string, username: string, password: string}) { 
+        const user: UserData = {  
+            name: "",  // This will be empty when logging in
             username: userData.username, 
             password: userData.password
         } 

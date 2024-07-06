@@ -9,11 +9,13 @@ dotenv.config();
 
 class AuthManager {
     private client: RedisClientType;
-    public user: string;
+    public user: string;  
+    public name: string; 
 
     constructor(client: RedisClientType) {
         this.client = client;
         this.user = ""
+        this.name = ""
     }
 
     private userKey = (username: string): string => `user:${username}`; 
@@ -27,10 +29,10 @@ class AuthManager {
     } 
 
     async registerUser(userData: UserData): Promise<boolean> {
-        let { username, password } = userData    
+        let { name, username, password } = userData    
         const salt = this.generateSalt()
         password = this.generateHashedPassword(password, salt)
-        const value = { password, salt }  
+        const value = { name, password, salt }  
         // First check if user exists  
         if (await this.userExists(username)) {  
             // Return if user already exists 
@@ -43,7 +45,7 @@ class AuthManager {
 
     async authenticateUser(userData: UserData): Promise<boolean> {
         const { username, password } = userData 
-        const user = await this.client.hGetAll(this.userKey(username)); 
+        const user = await this.client.hGetAll(this.userKey(username));  
         if (!user) { 
             logger.error(`Failed to authenticate user. User ${username} not found.`)
             return false; 
@@ -54,8 +56,15 @@ class AuthManager {
         if (authenticated) {
             logger.info(`User ${username} authenticated successfully.`)
             this.user = username 
+            this.name = user.name 
         }
         return authenticated
+    }
+
+    async getNameFromUser(username: string): Promise<string> {
+        const user = await this.client.hGetAll(this.userKey(username))  
+        this.name = user.name 
+        return this.name
     }
 }
 
