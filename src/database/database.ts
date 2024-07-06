@@ -68,6 +68,20 @@ class DatabaseManager {
         await this.client.hSet(`expense:${this.authManager.user}:${Date.now()}`, jsonData); 
     } 
 
+    async storeChatSummary(summary: string, numDataPoints: number) { 
+        // Only 1 summary per user for now 
+        logger.info(`Storing summary. Num Data points: ${numDataPoints}`) 
+        const value = { summary, numDataPoints } 
+        // Key: 
+        await this.client.hSet(`summary:${this.authManager.user}`, value) 
+    }
+
+    async getChatSummary(): Promise<[string, number]> { 
+        const { summary, numDataPoints: numDataPointsStr } = await this.client.hGetAll(`summary:${this.authManager.user}`) 
+        const numDataPoints = parseInt(numDataPointsStr) 
+        return [summary, numDataPoints]
+    }
+
     async exportExpenseDataAsCsv() {}   
 
     async getExpenseDataFromDates(startDate: string, endDate: string): Promise<ExpenseJson[]> { 

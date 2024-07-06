@@ -52,13 +52,29 @@ class Server {
             // Payload 
             // Get start and end date
             const { start_date: startDate, end_date: endDate  } = req.body 
-            const message = `Getting monthly data from ${startDate} to ${endDate}` 
+            const message = `Fetching history data from ${startDate} to ${endDate}` 
             logger.info(message)
             // Get data from db here 
             this.databaseManager.getExpenseDataFromDates(startDate, endDate).then((expenseData: ExpenseJson[]) => { 
                 if (expenseData.length > 0) {  
-                    this.chatbot.generateSummaryWithChatModel(expenseData).then((summary) => {
-                        res.status(200).json({message: `Fetching history data from ${startDate} to ${endDate}.`, data: expenseData, summary: summary})
+                    // Compare length with stored summary
+                    this.databaseManager.getChatSummary().then(([storedSummary, numDataPoints]) => { 
+                        // TODO: Improve this 
+                        logger.info(`Stored Data points: ${numDataPoints}. Expense Data: ${expenseData.length}`)
+                        if (expenseData.length == numDataPoints) {   
+                            logger.info("Using stored summary.")
+                            // Same Data. Return stored summary 
+                            res.status(200).json({message: message, data: expenseData, summary: storedSummary})
+                        } else {
+                            // Generate new summary 
+                            this.chatbot.generateSummaryWithChatModel(expenseData).then((summary) => { 
+                                logger.info("Generating new chatbot summary.")
+                                // Store summary and length to db   
+                                const summaryString: string = summary as string
+                                this.databaseManager.storeChatSummary(summaryString, expenseData.length)  
+                                res.status(200).json({message: message, data: expenseData, summary: summary})
+                            })
+                        }
                     })
                 } else {
                     res.status(200).json({message: `No expenses from ${startDate} to ${endDate}`})
