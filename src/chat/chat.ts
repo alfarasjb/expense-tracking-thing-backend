@@ -32,12 +32,6 @@ class ChatBot {
     } 
 
     async sendMessageToChatBot(userMessage: string, data: ExpenseJson[]): Promise<string | null> {  
-        /*
-        Check if there is history 
-        If there is history, get last 6, and add the user message (exclude the system prompt) 
-        
-        If there is no history, create new messages 
-        */ 
        let messages = []
        if (this.chatHistory.length > 0) {
             // history has contents 

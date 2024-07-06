@@ -56,29 +56,11 @@ class Server {
             logger.info(message)
             // Get data from db here 
             this.databaseManager.getExpenseDataFromDates(startDate, endDate).then((expenseData: ExpenseJson[]) => { 
-                if (expenseData.length > 0) {  
-                    // Compare length with stored summary
-                    this.databaseManager.getChatSummary().then(([storedSummary, numDataPoints]) => { 
-                        // TODO: Improve this 
-                        logger.info(`Stored Data points: ${numDataPoints}. Expense Data: ${expenseData.length}`)
-                        if (expenseData.length == numDataPoints) {   
-                            logger.info("Using stored summary.")
-                            // Same Data. Return stored summary 
-                            res.status(200).json({message: message, data: expenseData, summary: storedSummary})
-                        } else {
-                            // Generate new summary 
-                            this.chatbot.generateSummaryWithChatModel(expenseData).then((summary) => { 
-                                logger.info("Generating new chatbot summary.")
-                                // Store summary and length to db   
-                                const summaryString: string = summary as string
-                                this.databaseManager.storeChatSummary(summaryString, expenseData.length)  
-                                res.status(200).json({message: message, data: expenseData, summary: summary})
-                            })
-                        }
-                    })
-                } else {
+                if (expenseData.length === 0) {
                     res.status(200).json({message: `No expenses from ${startDate} to ${endDate}`})
-                }
+                    return 
+                } 
+                this.processSummaries(res, expenseData, message)
             })
         })
 
@@ -87,12 +69,12 @@ class Server {
             const { username } = req.body 
             const logger_message = "Getting history data"
             logger.info(logger_message)  
-            this.databaseManager.getAllExpenseData(username).then((expenseData) => {
-                if (expenseData.length > 0) {
-                    res.status(200).json({message: "Fetching history data.", data: expenseData}) 
-                } else {
-                    res.status(200).json({message: `No expense data found for user ${this.databaseManager.authManager.user}`})
+            this.databaseManager.getAllExpenseData(username).then((expenseData) => { 
+                if (expenseData.length == 0) {
+                    res.status(200).json({message: `No expense data found for user ${this.databaseManager.authManager.user}`}) 
+                    return; 
                 }
+                res.status(200).json({message: "Fetching history data.", data: expenseData}) 
             })
         })
 
@@ -111,9 +93,9 @@ class Server {
             this.databaseManager.registerUser(req.body).then((registered) => {
                 if (registered) {
                     res.status(200).json({message: `User ${req.body.username} registered succesfully.`, name: this.databaseManager.authManager.name})
-                } else {
-                    res.status(400).json({message: `Failed to register user ${req.body.username}. User already exists.`})
+                    return 
                 }
+                res.status(400).json({message: `Failed to register user ${req.body.username}. User already exists.`})
             })
         }) 
 
@@ -124,9 +106,9 @@ class Server {
             this.databaseManager.loginUser(req.body).then((success) => {
                 if (success) {
                     res.status(200).json({message: "Logged in successfully.", name: this.databaseManager.authManager.name}) 
-                } else {
-                    res.status(401).json({message: "Login failed. Username or password may be incorrect."})
+                    return
                 }
+                res.status(401).json({message: "Login failed. Username or password may be incorrect."})
             })
         })
 
@@ -143,21 +125,46 @@ class Server {
             if (monthlyData.length == 0) {
                 this.databaseManager.initializeMonthlyData().then((monthlyData) => {
                     this.sendChatBotMessage(message, monthlyData, res)
-                })
-            } else {
-                this.sendChatBotMessage(message, monthlyData, res) 
+                }) 
+                return 
             }
+            this.sendChatBotMessage(message, monthlyData, res) 
+        })
+    }
+
+    private processSummaries(res: Response, expenseData: ExpenseJson[], message: string) {
+        // Compare length with stored summary
+        this.databaseManager.getChatSummary().then(([storedSummary, numDataPoints]) => { 
+            // TODO: Improve this 
+            logger.info(`Stored Data points: ${numDataPoints}. Expense Data: ${expenseData.length}`)
+            if (expenseData.length === numDataPoints) {   
+                logger.info("Using stored summary.")
+                // Same Data. Return stored summary 
+                res.status(200).json({message: message, data: expenseData, summary: storedSummary}) 
+                return; 
+            } 
+            this.generateChatbotSummary(res, expenseData, message) 
         })
     }
     
     private sendChatBotMessage(message: string, monthlyData: ExpenseJson[], res: Response): any {
-        this.chatbot.sendMessageToChatBot(message, monthlyData).then((chatbotResponse) => {
+        this.chatbot.sendMessageToChatBot(message, monthlyData).then((chatbotResponse) => { 
             if (chatbotResponse !== null) {
-                res.status(200).json({message: chatbotResponse})
-            } else {
-                logger.error("no response from chatbot")
-                res.status(404)
+                res.status(200).json({message: chatbotResponse}) 
+                return 
             }
+            logger.error("no response from chatbot")
+            res.status(404)
+        })
+    } 
+
+    private generateChatbotSummary(res: Response, expenseData: ExpenseJson[], message: string) { 
+        this.chatbot.generateSummaryWithChatModel(expenseData).then((summary) => {
+            logger.info("Generating new chatbot summary.") 
+            // Store summary and length to db  
+            const summaryString: string = summary as string 
+            this.databaseManager.storeChatSummary(summaryString, expenseData.length) 
+            res.status(200).json({message: message, data: expenseData, summary: summary}) 
         })
     }
 
